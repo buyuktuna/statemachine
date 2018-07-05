@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Document</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">
+    </script>
+    
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <h1>emre</h1>
+    <div id = "container">
+        <div id = "videoPlayerContainer">
+            <div id = "videoContainer">
+                <video id = "video">
+                    <source id = "videosrc">
+                </video>
+                <div id = "controlsContainer">
+                    
+                    <button class = "controlButton" id = "prevButton" style="flex: none">prev</button>
+                    <button class = "controlButton" id = "backward" style="flex: none">backward</button>
+                    <button class = "controlButton" id = "playbutton" style="flex: none">play</button>
+                    <button class = "controlButton" id = "forward" style="flex: none">forward</button>
+                    <button class = "controlButton" id = "nextButton" style="flex: none">next</button>
+                    <div id = "seekbar" style="flex: auto">
+                        <div id = "loadprogress">
+                            
+                        </div>
+                        <div id = "playprogress">
+                            <div id = "thumb">
+                            </div>
+                        </div>
+                    </div>
+                    <button class = "controlButton"  id = "soundButton" style="flex: none">S</button>
+                    <button class = "controlButton"  id = "fullscreenButton" style="flex: none">FS</button>
+    
+                    
+                </div>
+            </div>
+
+
+        </div>
+        <div id = "playlistContainer">
+            
+        </div>
+    </div>
+
+
+    <script src="statemachine.js"></script>
+</body>
+</html>
