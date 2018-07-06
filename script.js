@@ -58,28 +58,24 @@ var VideoPlayer = function () {
     }
     this.fsm = new MyStateMachine(
         {
-            "init": {
-                "variables-ready": "load-variables"
+            "start": {
+                "config-loaded": "ready"
 
             },
-            "load-variables": {
-                "variables-loaded": "load-video"
-            },
-            "load-video": {
+            "ready": {
                 "video-loaded": "pause"
+            },
+            "pause": {
+                "play-clicked": "play",
             },
             "play": {
                 "pause-clicked": "pause",
                 "video-ended": "end"
             },
-            "pause": {
-                "play-clicked": "play",
-            },
             "end": {
-                "replay-clicked": "play",
-                "autoplay": "load-variables"
+                "autoplay": "start"
             }
-        }, "init", triggerStateChangeEvent.bind(this));
+        }, "start", triggerStateChangeEvent.bind(this));
 }
 
 VideoPlayer.prototype.__trigger = function (eventName, data) {
@@ -87,32 +83,22 @@ VideoPlayer.prototype.__trigger = function (eventName, data) {
     this.events.fire(eventName, data);
 }
 
-VideoPlayer.prototype.variablesReady = function () {
-    this.__trigger("variables-ready");
+VideoPlayer.prototype.loadConfig = function () {
+    this.__trigger("config-loaded");
+}
+VideoPlayer.prototype.loadVideo = function () {
+    this.__trigger("video-loaded");
 }
 
-VideoPlayer.prototype.loadVariables = function () {
-    this.__trigger("variables-loaded");
-    console.log("variables loaded");
-}
-VideoPlayer.prototype.loadVideo = function (data) {
-    this.__trigger("video-loaded", data);
-    console.log("video loaded");
-}
-
-VideoPlayer.prototype.replay = function (data) {
-    this.__trigger("replay-clicked", data);
+VideoPlayer.prototype.pause = function () {
+    this.__trigger("pause-clicked");
 };
 
-VideoPlayer.prototype.pause = function (data) {
-    this.__trigger("pause-clicked", data);
+VideoPlayer.prototype.play = function () {
+    this.__trigger("play-clicked" );
 };
-
-VideoPlayer.prototype.play = function (data) {
-    this.__trigger("play-clicked", data);
-};
-VideoPlayer.prototype.videoEnded = function (data) {
-    this.__trigger("video-ended", data);
+VideoPlayer.prototype.videoEnded = function () {
+    this.__trigger("video-ended");
 };
 
 VideoPlayer.prototype.autoplay = function () {
@@ -124,49 +110,46 @@ var logStateChange = function (newState) {
 };
 
 
-var videoended = function (data) {
-    console.log(data.video);
-    curIndex = mod(curIndex , config.playlistLength);
-    if (config.playlistOn && config.autoplay) {
-        vp.autoplay();
+var videoended = function () {
 
+    resetControls();
+
+    if (config.playlistOn && config.autoplay) {
+        curIndex++;
+        curIndex = mod(curIndex , config.playlistLength);
+        vp.autoplay();
     }
 }
 
-var playclicked = function (data) {
+var playclicked = function () {
     //update button
-    data.video.play();
-    data.button.innerHTML = "pause";
+    video.play();
+    playButton.setAttribute("src","./public/img/pause.png");
 }
-var pauseclicked = function (data) {
-    data.video.pause();
-    data.button.innerHTML = "play";
+var pauseclicked = function () {
+    video.pause();
+    playButton.setAttribute("src","./public/img/play.png");
 }
-var replayclicked = function (data) {
-    data.video.currentTime = 0;
-    data.video.play();
+var videoloaded = function () {
+    video.load();
+
 }
 
-var videoloaded = function (data) {
-    data.video.load();
-    data.playButton.disabled = false;
-
-
-    //data.replayButton.disabled = false;
+var configloaded = function(){
+    loadConfig();
+    vp.loadVideo({ video: video, playButton: playButton });
 }
 
 var autoplay = function(){
-    vp.loadVariables();
+    vp.loadConfig();
 }
 
-var variablesloaded = function(){
-    loadConfig();
-    vp.loadVideo({video: video, playButton: playButton});
-}
 
 var vp = new VideoPlayer();
 
 vp.events.on("state-change", logStateChange);
+
+vp.events.on("config-loaded", configloaded)
 
 vp.events.on("video-loaded", videoloaded);
 
@@ -176,11 +159,8 @@ vp.events.on("pause-clicked", pauseclicked);
 
 vp.events.on("video-ended", videoended);
 
-vp.events.on("variables-loaded", variablesloaded);
-
 vp.events.on("autoplay", autoplay);
 
-// vp.events.on("replay-clicked", replayclicked);
 
 var Config = function () {
 
@@ -205,13 +185,16 @@ function mod(n, m) {
     return ((n % m) + m) % m;
 }
 
-
+var resetControls = function (){
+    playButton.setAttribute("src","./public/img/play.png");
+    $("#playprogress").css("width", 0 + "%");
+}
 
 var playButton = document.getElementById("playbutton");
 var soundButton = document.getElementById("soundButton");
 var fullScreenButton = document.getElementById("fullscreenButton");
 // var replayButton = document.getElementById("replaybutton");
-playButton.disabled = true;
+// playButton.disabled = true;
 // replayButton.disabled = true;
 
 
@@ -236,11 +219,8 @@ let loadConfig = function(){
     videoSrc.setAttribute("src", config.playlist[curIndex].url);
 }
 
-vp.variablesReady()
+vp.loadConfig();
 
-vp.loadVariables();
-
-//vp.loadVideo({ video: video, playButton: playButton });
 
 playButton.addEventListener("click", function () {
     if (vp.fsm.currentStateName === "pause") {
@@ -249,11 +229,7 @@ playButton.addEventListener("click", function () {
         vp.pause({ video: video, button: this });
     }
 });
-// replayButton.addEventListener("click", function () {
-//     if (vp.fsm.currentStateName === "end") {
-//         vp.replay({video: video, button: this});
-//     }
-// });
+
 soundButton.addEventListener("click", function () {
     video.muted = !video.muted;
 });
@@ -285,7 +261,7 @@ fullscreenButton.addEventListener("click", function () {
 });
 
 video.addEventListener("ended", function () {
-    vp.videoEnded({ video: video });
+    vp.videoEnded({ video: video, playButton: playButton });
 });
 
 video.addEventListener("timeupdate", function () {
